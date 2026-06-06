@@ -25,8 +25,8 @@ jobs:
       - name: Restore Google credentials
         run: |
           mkdir -p credentials
-          echo "${{ secrets.GOOGLE_CREDENTIALS_BASE64 }}" | base64 -d > credentials/credentials.json
-          echo "${{ secrets.GOOGLE_TOKEN_BASE64 }}" | base64 -d > credentials/token.pickle
+          printf '%s' "${{ secrets.GOOGLE_CREDENTIALS_BASE64 }}" | base64 -d > credentials/credentials.json
+          printf '%s' "${{ secrets.GOOGLE_TOKEN_BASE64 }}" | base64 -d > credentials/token.pickle
 
       - name: Run weekly report
         env:

@@ -16,11 +16,18 @@ def run(dry_run=False):
     print("📅 주간 일정 분석 시작")
     print("=" * 50)
 
-    print("\n[1/4] 저번 주 일정 가져오는 중...")
-    all_events, week_start, week_end = fetch_all_events(CALENDAR_IDS, offset_weeks=1)
+    print("\n[1/4] 이번 주 일정 가져오는 중...")
+    all_events, week_start, week_end = fetch_all_events(CALENDAR_IDS, offset_weeks=0)
 
     print("\n[2/4] 일정 분석 중...")
     result = analyze(all_events)
+
+    print("  저번 주 미실행 일정 확인 중...")
+    last_events, _, _ = fetch_all_events(CALENDAR_IDS, offset_weeks=1)
+    last_result = analyze(last_events)
+    result["graphite_count"] = last_result["graphite_count"]
+    result["graphite_events"] = last_result["graphite_events"]
+    result["graphite_categories"] = last_result["graphite_categories"]
 
     print("\n[3/4] 리포트 메시지 생성 중...")
     message = build_message(result, week_start, week_end)

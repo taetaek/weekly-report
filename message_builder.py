@@ -22,11 +22,11 @@ def build_message(analysis, week_start, week_end):
 
     ws = week_start.strftime("%Y.%m.%d")
     we = week_end.strftime("%Y.%m.%d")
-    lines.append(f"📅 [금주 일정 분석 리포트]")
+    lines.append(f"📅 [일정 리포트]")
     lines.append(f"{ws}(월) ~ {we}(일)")
     lines.append("")
     lines.append("━━━━━━━━━━━━━━━━━")
-    lines.append("📊 자기계발 영역별 현황")
+    lines.append("📊 이번주 일정")
     lines.append("━━━━━━━━━━━━━━━━━")
 
     counts = analysis["activity_counts"]
@@ -36,31 +36,27 @@ def build_message(analysis, week_start, week_end):
     for cat, emoji in CATEGORY_EMOJI.items():
         count = counts.get(cat, 0)
         alert = "🚨 " if count == 0 else ""
-        detail_str = ""
-        if count > 0 and details.get(cat):
-            # 중복 제거 후 키워드 요약
-            unique = list(dict.fromkeys(details[cat]))[:3]
-            detail_str = " (" + " / ".join(unique[:2]) + ("..." if len(unique) > 2 else "") + ")"
-        lines.append(f"{alert}{emoji} {cat}: {count}개{detail_str}")
+        lines.append(f"{alert}{emoji} {cat}: {count}건")
 
     lines.append("")
     lines.append("━━━━━━━━━━━━━━━━━")
-    lines.append("📅 카테고리 없는 요일")
+    lines.append("📅 일정 없는 요일")
     lines.append("━━━━━━━━━━━━━━━━━")
 
-    missing = analysis["missing_days"]
-    for cal_key, label in CALENDAR_LABEL.items():
-        days = missing.get(cal_key, [])
-        if days:
-            lines.append(f"• {label} 없음: {', '.join(days)}")
-        else:
-            lines.append(f"• {label}: 매일 있음 ✅")
+    all_weekdays = ["월", "화", "수", "목", "금", "토", "일"]
+    active_days = analysis["active_days"]
+    empty_days = [d for d in all_weekdays if d not in active_days]
+    if empty_days:
+        lines.append(f"• {', '.join(empty_days)}")
+    else:
+        lines.append("• 매일 있음 ✅")
 
     lines.append("")
     lines.append("━━━━━━━━━━━━━━━━━")
     graphite = analysis["graphite_count"]
-    alert = "🚨 " if graphite > 0 else "✅ "
-    lines.append(f"{alert}⬛ 미실행 일정 (흑연): {graphite}개")
+    cats = analysis.get("graphite_categories", set())
+    cat_str = f" ({'/'.join(sorted(cats))})" if cats else ""
+    lines.append(f"{alert}⬛ 저번주 미실행 일정: {graphite}건{cat_str}")
     lines.append("━━━━━━━━━━━━━━━━━")
 
     return "\n".join(lines)

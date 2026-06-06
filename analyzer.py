@@ -39,6 +39,7 @@ def analyze(all_events_by_calendar):
 
     graphite_count = 0
     graphite_events = []
+    graphite_categories = set()
 
     # 요일별 카테고리 유무
     days_with = {
@@ -46,6 +47,7 @@ def analyze(all_events_by_calendar):
         "자기계발_취미": set(),
         "자유시간": set(),
     }
+    active_days = set()  # 활동이 1건 이상 있는 요일
 
     for cal_name, events in all_events_by_calendar.items():
         for event in events:
@@ -60,6 +62,9 @@ def analyze(all_events_by_calendar):
             if color_id == GRAPHITE_COLOR_ID:
                 graphite_count += 1
                 graphite_events.append(summary)
+                if "일정" not in summary:
+                    for cat in classify_activity(summary):
+                        graphite_categories.add(cat)
 
             # 요일별 카테고리 체크
             if cal_name in days_with:
@@ -69,13 +74,18 @@ def analyze(all_events_by_calendar):
             if cal_name == REST_CALENDAR:
                 activity_counts["휴식"] += 1
                 activity_details["휴식"].append(summary)
+                active_days.add(weekday)
                 continue
 
             # 키워드 기반 분류 (자기계발_취미, 개인업무 모두 검색)
+            if "일정" in summary:
+                continue
             matched_categories = classify_activity(summary)
             for cat in matched_categories:
                 activity_counts[cat] += 1
                 activity_details[cat].append(summary)
+            if matched_categories:
+                active_days.add(weekday)
 
     all_weekdays = set(WEEKDAY_NAMES)
     missing_days = {
@@ -91,6 +101,8 @@ def analyze(all_events_by_calendar):
         "activity_details": activity_details,
         "graphite_count": graphite_count,
         "graphite_events": graphite_events,
+        "graphite_categories": graphite_categories,
         "missing_days": missing_days,
         "zero_categories": zero_categories,
+        "active_days": active_days,
     }

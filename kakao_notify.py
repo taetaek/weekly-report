@@ -1,6 +1,6 @@
 import json
 import requests
-from config import KAKAO_REST_API_KEY, KAKAO_REFRESH_TOKEN, KAKAO_TOKEN_URL, KAKAO_SEND_URL
+from config import KAKAO_REST_API_KEY, KAKAO_CLIENT_SECRET, KAKAO_REFRESH_TOKEN, KAKAO_TOKEN_URL, KAKAO_SEND_URL
 
 
 def refresh_access_token():
@@ -16,6 +16,7 @@ def refresh_access_token():
         data={
             "grant_type": "refresh_token",
             "client_id": KAKAO_REST_API_KEY,
+            "client_secret": KAKAO_CLIENT_SECRET,
             "refresh_token": KAKAO_REFRESH_TOKEN,
         },
         headers={"Content-Type": "application/x-www-form-urlencoded"},

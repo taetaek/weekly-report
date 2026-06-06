@@ -12,7 +12,7 @@
 import webbrowser
 import requests
 from urllib.parse import urlparse, parse_qs
-from config import KAKAO_REST_API_KEY
+from config import KAKAO_REST_API_KEY, KAKAO_CLIENT_SECRET
 
 REDIRECT_URI = "http://localhost"
 AUTH_URL = "https://kauth.kakao.com/oauth/authorize"
@@ -46,6 +46,7 @@ def main():
         data={
             "grant_type": "authorization_code",
             "client_id": KAKAO_REST_API_KEY,
+            "client_secret": KAKAO_CLIENT_SECRET,
             "redirect_uri": REDIRECT_URI,
             "code": code,
         },

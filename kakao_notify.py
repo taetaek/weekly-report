@@ -1,10 +1,17 @@
+import os
 import json
 import requests
 from config import KAKAO_REST_API_KEY, KAKAO_CLIENT_SECRET, KAKAO_REFRESH_TOKEN, KAKAO_TOKEN_URL, KAKAO_SEND_URL
 
+# 카카오가 access token 갱신 시 refresh token도 함께 회전시키는 경우가 있어,
+# 새 refresh token을 이 파일에 남겨두면 워크플로우가 시크릿을 자동 갱신한다.
+NEW_REFRESH_TOKEN_PATH = os.getenv(
+    "KAKAO_NEW_REFRESH_TOKEN_PATH", "credentials/kakao_refresh_token.new"
+)
+
 
 def refresh_access_token():
-    """Refresh token으로 새 Access Token 발급"""
+    """Refresh token으로 새 Access Token 발급 (회전된 refresh token은 파일에 저장)"""
     if not KAKAO_REFRESH_TOKEN:
         raise ValueError(
             "KAKAO_REFRESH_TOKEN이 설정되지 않았습니다.\n"
@@ -26,6 +33,12 @@ def refresh_access_token():
 
     if "access_token" not in data:
         raise RuntimeError(f"Access Token 발급 실패: {data}")
+
+    new_refresh_token = data.get("refresh_token")
+    if new_refresh_token and new_refresh_token != KAKAO_REFRESH_TOKEN:
+        os.makedirs(os.path.dirname(NEW_REFRESH_TOKEN_PATH) or ".", exist_ok=True)
+        with open(NEW_REFRESH_TOKEN_PATH, "w") as f:
+            f.write(new_refresh_token)
 
     return data["access_token"]
 

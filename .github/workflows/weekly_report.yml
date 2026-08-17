@@ -35,3 +35,16 @@ jobs:
           KAKAO_REFRESH_TOKEN: ${{ secrets.KAKAO_REFRESH_TOKEN }}
           REPORT_TIMEZONE: Asia/Seoul
         run: python main.py
+
+      - name: Rotate Kakao refresh token if renewed
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          if [ -f credentials/kakao_refresh_token.new ]; then
+            gh secret set KAKAO_REFRESH_TOKEN --repo ${{ github.repository }} < credentials/kakao_refresh_token.new
+            rm -f credentials/kakao_refresh_token.new
+            echo "Kakao refresh token rotated."
+          else
+            echo "No Kakao token rotation needed."
+          fi

@@ -34,7 +34,7 @@ jobs:
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: projects/3291581158992/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions
+          workload_identity_provider: projects/329158158992/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions
           service_account: weekly-report-calendar-reader@project-ebb986a5-c40e-49b7-8ab.iam.gserviceaccount.com
 
       - name: Build weekly dashboard

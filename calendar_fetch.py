@@ -1,40 +1,17 @@
-import os
-import pickle
 import datetime
 import pytz
-from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
-from google.auth.transport.requests import Request
+import google.auth
 from googleapiclient.discovery import build
 
-from config import GOOGLE_CREDENTIALS_PATH, GOOGLE_TOKEN_PATH, GOOGLE_SCOPES, TIMEZONE
+from config import GOOGLE_SCOPES, TIMEZONE
 
 
 def get_service():
-    creds = None
-
-    if os.path.exists(GOOGLE_TOKEN_PATH):
-        with open(GOOGLE_TOKEN_PATH, "rb") as token:
-            creds = pickle.load(token)
-
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            if not os.path.exists(GOOGLE_CREDENTIALS_PATH):
-                raise FileNotFoundError(
-                    f"credentials.json 파일이 없습니다: {GOOGLE_CREDENTIALS_PATH}\n"
-                    "Google Cloud Console에서 OAuth2 credentials를 다운로드하세요."
-                )
-            flow = InstalledAppFlow.from_client_secrets_file(
-                GOOGLE_CREDENTIALS_PATH, GOOGLE_SCOPES
-            )
-            creds = flow.run_local_server(port=0)
-
-        with open(GOOGLE_TOKEN_PATH, "wb") as token:
-            pickle.dump(creds, token)
-
-    return build("calendar", "v3", credentials=creds)
+    # GitHub Actions: google-github-actions/auth가 Workload Identity Federation으로
+    # 서비스 계정을 가장(impersonate)하고 GOOGLE_APPLICATION_CREDENTIALS를 설정해준다.
+    # 로컬 실행: `gcloud auth application-default login` 필요.
+    credentials, _ = google.auth.default(scopes=GOOGLE_SCOPES)
+    return build("calendar", "v3", credentials=credentials)
 
 
 def get_week_range(offset_weeks=1):

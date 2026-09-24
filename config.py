@@ -3,9 +3,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Google Calendar 인증
-GOOGLE_CREDENTIALS_PATH = os.getenv("GOOGLE_CREDENTIALS_PATH", "credentials/credentials.json")
-GOOGLE_TOKEN_PATH = os.getenv("GOOGLE_TOKEN_PATH", "credentials/token.pickle")
+# Google Calendar 인증 (Workload Identity Federation을 통한 Application Default Credentials)
 GOOGLE_SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
 
 # 캘린더 ID 목록
@@ -31,11 +29,8 @@ REST_CALENDAR = "자유시간"
 # 흑연 색상 ID (Google Calendar API 기준)
 GRAPHITE_COLOR_ID = "8"
 
-# 카카오톡
-KAKAO_REST_API_KEY = os.getenv("KAKAO_REST_API_KEY", "")
-KAKAO_CLIENT_SECRET = os.getenv("KAKAO_CLIENT_SECRET", "")
-KAKAO_REFRESH_TOKEN = os.getenv("KAKAO_REFRESH_TOKEN", "")
-KAKAO_TOKEN_URL = "https://kauth.kakao.com/oauth/token"
-KAKAO_SEND_URL = "https://kapi.kakao.com/v2/api/talk/memo/default/send"
+# 대시보드
+DASHBOARD_PASSWORD = os.getenv("DASHBOARD_PASSWORD", "")
+DASHBOARD_OUTPUT_PATH = os.getenv("DASHBOARD_OUTPUT_PATH", "public/index.html")
 
 TIMEZONE = os.getenv("REPORT_TIMEZONE", "Asia/Seoul")

@@ -6,8 +6,17 @@ on:
     - cron: '0 23 * * 0'
   workflow_dispatch:  # 수동 실행 버튼
 
+permissions:
+  contents: read
+  id-token: write   # Workload Identity Federation (Google Cloud 인증)
+  pages: write       # GitHub Pages 배포
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
 jobs:
-  send-report:
+  build-report:
     runs-on: ubuntu-latest
 
     steps:
@@ -22,29 +31,30 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Restore Google credentials
-        run: |
-          mkdir -p credentials
-          printf '%s' "${{ secrets.GOOGLE_CREDENTIALS_BASE64 }}" | base64 -d > credentials/credentials.json
-          printf '%s' "${{ secrets.GOOGLE_TOKEN_BASE64 }}" | base64 -d > credentials/token.pickle
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/3291581158992/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions
+          service_account: weekly-report-calendar-reader@project-ebb986a5-c40e-49b7-8ab.iam.gserviceaccount.com
 
-      - name: Run weekly report
+      - name: Build weekly dashboard
         env:
-          KAKAO_REST_API_KEY: ${{ secrets.KAKAO_REST_API_KEY }}
-          KAKAO_CLIENT_SECRET: ${{ secrets.KAKAO_CLIENT_SECRET }}
-          KAKAO_REFRESH_TOKEN: ${{ secrets.KAKAO_REFRESH_TOKEN }}
+          DASHBOARD_PASSWORD: ${{ secrets.DASHBOARD_PASSWORD }}
           REPORT_TIMEZONE: Asia/Seoul
         run: python main.py
 
-      - name: Rotate Kakao refresh token if renewed
-        if: always()
-        env:
-          GH_TOKEN: ${{ secrets.GH_PAT }}
-        run: |
-          if [ -f credentials/kakao_refresh_token.new ]; then
-            gh secret set KAKAO_REFRESH_TOKEN --repo ${{ github.repository }} < credentials/kakao_refresh_token.new
-            rm -f credentials/kakao_refresh_token.new
-            echo "Kakao refresh token rotated."
-          else
-            echo "No Kakao token rotation needed."
-          fi
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+  deploy-report:
+    needs: build-report
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

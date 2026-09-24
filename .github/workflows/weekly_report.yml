@@ -1,60 +1,37 @@
-name: Weekly Report
+name: Deploy Weekly Report Dashboard
 
 on:
-  schedule:
-    # 매주 월요일 오전 8시 KST (= 일요일 23:00 UTC)
-    - cron: '0 23 * * 0'
-  workflow_dispatch:  # 수동 실행 버튼
+  push:
+    branches: [main]
+    paths:
+      - 'public/**'
+      - '.github/workflows/weekly_report.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read
-  id-token: write   # Workload Identity Federation (Google Cloud 인증)
-  pages: write       # GitHub Pages 배포
+  pages: write
+  id-token: write
 
 concurrency:
   group: pages
   cancel-in-progress: false
 
 jobs:
-  build-report:
+  deploy:
     runs-on: ubuntu-latest
-
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: projects/329158158992/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions
-          service_account: weekly-report-calendar-reader@project-ebb986a5-c40e-49b7-8ab.iam.gserviceaccount.com
-
-      - name: Build weekly dashboard
-        env:
-          DASHBOARD_PASSWORD: ${{ secrets.DASHBOARD_PASSWORD }}
-          REPORT_TIMEZONE: Asia/Seoul
-        run: python main.py
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: public
 
-  deploy-report:
-    needs: build-report
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

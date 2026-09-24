@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex, nofollow" />
+<title>주간 리포트</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f7f7f8;
+    --card: #ffffff;
+    --text: #1c1c1e;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --accent: #4f46e5;
+    --alert: #dc2626;
+    --alert-bg: #fef2f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #121214;
+      --card: #1c1c1f;
+      --text: #f2f2f3;
+      --muted: #9a9aa2;
+      --border: #2c2c30;
+      --accent: #818cf8;
+      --alert: #f87171;
+      --alert-bg: #2a1414;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    min-height: 100vh;
+  }
+  .gate {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .gate-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px 28px;
+    width: 100%;
+    max-width: 340px;
+    text-align: center;
+  }
+  .gate-box h1 { font-size: 18px; margin: 0 0 20px; }
+  .gate-box input {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 15px;
+    text-align: center;
+  }
+  .gate-box button {
+    width: 100%;
+    margin-top: 12px;
+    padding: 12px;
+    border-radius: 10px;
+    border: none;
+    background: var(--accent);
+    color: white;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .gate-box button:disabled { opacity: 0.6; cursor: default; }
+  .gate-error { color: var(--alert); font-size: 13px; margin-top: 10px; min-height: 16px; }
+  main { max-width: 640px; margin: 0 auto; padding: 32px 20px 60px; }
+  header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+  header h1 { font-size: 22px; margin: 0 0 4px; }
+  header p.range { color: var(--muted); margin: 0 0 4px; font-size: 14px; }
+  .refresh-info { color: var(--muted); font-size: 12px; margin: 0 0 28px; }
+  .refresh-info button {
+    background: none; border: none; color: var(--accent); font-size: 12px;
+    cursor: pointer; padding: 0; margin-left: 8px; text-decoration: underline;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 20px;
+    margin-bottom: 14px;
+  }
+  .card h2 { font-size: 14px; color: var(--muted); margin: 0 0 12px; font-weight: 600; }
+  .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 15px;
+  }
+  .row:last-child { border-bottom: none; }
+  .row .label { display: flex; align-items: center; gap: 8px; }
+  .row .count { font-weight: 700; }
+  .row.zero { color: var(--alert); }
+  .empty-days { font-size: 15px; }
+  .events { margin-top: 10px; font-size: 13px; color: var(--muted); line-height: 1.6; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+  <div id="gate" class="gate">
+    <div class="gate-box">
+      <h1>🔒 비밀번호를 입력하세요</h1>
+      <input id="pw" type="password" inputmode="text" autocomplete="off" autofocus />
+      <button id="unlock">열기</button>
+      <div id="err" class="gate-error"></div>
+    </div>
+  </div>
+
+  <main id="report" hidden></main>
+
+<script>
+const API_URL = "https://script.google.com/macros/s/AKfycbzLo1YD4Yu1n9w39BKxBM6uoehc7p4-HtpYa8B5Tce5quwYdk7WdbN4XCsgayqfPQfgEA/exec";
+
+async function fetchReport(password) {
+  const res = await fetch(API_URL + "?password=" + encodeURIComponent(password));
+  const data = await res.json();
+  if (data.error) throw new Error(data.error);
+  return data;
+}
+
+function esc(s) {
+  return String(s).replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+}
+
+function render(data) {
+  const main = document.getElementById("report");
+  const fetchedAt = new Date(data.generatedAt || Date.now());
+  const timeStr = fetchedAt.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
+
+  let html = `
+    <header>
+      <div>
+        <h1>📅 주간 일정 리포트</h1>
+        <p class="range">${esc(data.weekStart)}(월) ~ ${esc(data.weekEnd)}(일)</p>
+      </div>
+    </header>
+    <p class="refresh-info">마지막 조회: ${esc(timeStr)}<button id="refreshBtn">새로고침</button></p>
+    <div class="card">
+      <h2>이번주 일정</h2>
+  `;
+  for (const cat of data.categories) {
+    const zero = cat.count === 0;
+    html += `
+      <div class="row ${zero ? "zero" : ""}">
+        <span class="label">${zero ? "🚨" : ""}${cat.emoji} ${esc(cat.name)}</span>
+        <span class="count">${cat.count}건</span>
+      </div>`;
+  }
+  html += `</div>`;
+
+  html += `
+    <div class="card">
+      <h2>일정 없는 요일</h2>
+      <div class="empty-days">${data.emptyDays.length ? esc(data.emptyDays.join(", ")) : "매일 있음 ✅"}</div>
+    </div>
+  `;
+
+  const catStr = data.graphiteCategories.length ? ` (${esc(data.graphiteCategories.join("/"))})` : "";
+  html += `
+    <div class="card">
+      <h2>저번주 미실행 일정</h2>
+      <div class="row ${data.graphiteCount > 0 ? "zero" : ""}">
+        <span class="label">⬛ 미실행</span>
+        <span class="count">${data.graphiteCount}건${catStr}</span>
+      </div>
+      ${data.graphiteEvents.length ? `<div class="events">${data.graphiteEvents.map(esc).join("<br>")}</div>` : ""}
+    </div>
+  `;
+
+  main.innerHTML = html;
+  main.hidden = false;
+  document.getElementById("gate").hidden = true;
+
+  document.getElementById("refreshBtn").addEventListener("click", async () => {
+    const pw = sessionStorage.getItem("wr_pw");
+    if (!pw) return;
+    try {
+      const fresh = await fetchReport(pw);
+      render(fresh);
+    } catch (e) {
+      alert("새로고침 실패: " + e.message);
+    }
+  });
+}
+
+async function attempt() {
+  const pwInput = document.getElementById("pw");
+  const unlockBtn = document.getElementById("unlock");
+  const err = document.getElementById("err");
+  const pw = pwInput.value;
+  err.textContent = "";
+  if (!pw) return;
+  unlockBtn.disabled = true;
+  try {
+    const data = await fetchReport(pw);
+    try { sessionStorage.setItem("wr_pw", pw); } catch (e) {}
+    render(data);
+  } catch (e) {
+    err.textContent = "비밀번호가 올바르지 않거나 서버에 연결할 수 없습니다.";
+  } finally {
+    unlockBtn.disabled = false;
+  }
+}
+
+document.getElementById("unlock").addEventListener("click", attempt);
+document.getElementById("pw").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") attempt();
+});
+
+(async () => {
+  let cached = null;
+  try { cached = sessionStorage.getItem("wr_pw"); } catch (e) {}
+  if (cached) {
+    try {
+      const data = await fetchReport(cached);
+      render(data);
+    } catch (e) {
+      try { sessionStorage.removeItem("wr_pw"); } catch (e2) {}
+    }
+  }
+})();
+</script>
+</body>
+</html>
